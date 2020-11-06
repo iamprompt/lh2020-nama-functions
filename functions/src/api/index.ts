@@ -108,7 +108,9 @@ export const status = functions.region('asia-northeast1').https.onRequest(async 
     const { groupId, userId, eventId, status } = req.query
     res.status(200).send({
       status: 'success',
-      data: await updateUserStatus(<string>groupId, <string>eventId, <string>userId, <userStatus>status),
+      data: {
+        update: await updateUserStatus(<string>groupId, <string>eventId, <string>userId, <userStatus>status),
+      },
     })
     return
   }

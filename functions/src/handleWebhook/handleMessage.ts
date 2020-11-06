@@ -64,7 +64,7 @@ const handleMessageText = async (event: MessageEvent) => {
         if (event.source.type === 'group') {
           resolve(
             await lineClient.replyMessage(event.replyToken, [
-              <FlexMessage>await eventSummaryFlex(event.source.groupId, 'B8YLbEG1dBjlBy5SJ7sP', 4),
+              <FlexMessage>await eventSummaryFlex(event.source.groupId, 'IfTSjJ6V4RrEP3lcm1Za', 4),
               // eventSummaryFlex(ev, notificationType.NOTI_1D),
               // eventSummaryFlex(ev, notificationType.NOTI_60M),
               // eventSummaryFlex(ev, notificationType.NOTI_EVENT_TIME),
@@ -121,94 +121,122 @@ const manaCallEvent = (event: MessageEvent) => {
 }
 
 const manaCreateEvent = (event: MessageEvent) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
-      const bgImage: FlexImage = {
-        type: 'image',
-        size: 'full',
-        aspectMode: 'cover',
-        gravity: 'center',
-        aspectRatio: '1:1',
-        url:
-          'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Fflex%2FFlex_CreateEvent.png?alt=media&p=1',
-      }
+      // @ts-expect-error
+      const eventRef = firestore.collection('nama').doc(event.source.groupId).collection('events')
+      const activeEventSnap = await eventRef.where('eventStatus', '==', 'active').get()
 
-      const buttonContainer: FlexBox = {
-        type: 'box',
-        layout: 'horizontal',
-        contents: [
-          {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-              {
-                type: 'button',
-                action: {
-                  type: 'uri',
-                  label: 'เพิ่มนัดหมาย',
-                  uri: 'http://google.com/', // Todo: Edit Action to liff
+      if (activeEventSnap.empty) {
+        const bgImage: FlexImage = {
+          type: 'image',
+          size: 'full',
+          aspectMode: 'cover',
+          gravity: 'center',
+          aspectRatio: '1:1',
+          url:
+            'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Fflex%2FFlex_CreateEvent.png?alt=media&p=1',
+        }
+
+        const buttonContainer: FlexBox = {
+          type: 'box',
+          layout: 'horizontal',
+          contents: [
+            {
+              type: 'box',
+              layout: 'vertical',
+              contents: [
+                {
+                  type: 'button',
+                  action: {
+                    type: 'uri',
+                    label: 'เพิ่มนัดหมาย',
+                    uri: 'http://google.com/', // Todo: Edit Action to liff
+                  },
+                  color: '#F06129',
+                  style: 'primary',
                 },
-                color: '#F06129',
-                style: 'primary',
-              },
-            ],
-            spacing: 'xs',
+              ],
+              spacing: 'xs',
+            },
+          ],
+          position: 'absolute',
+          offsetBottom: '0px',
+          offsetStart: '0px',
+          offsetEnd: '0px',
+          paddingAll: '20px',
+        }
+
+        const headerText: FlexText = {
+          type: 'text',
+          text: '#สร้างนัดหมาย',
+          offsetTop: '25px',
+          offsetStart: '25px',
+          offsetEnd: '0px',
+          position: 'absolute',
+          weight: 'bold',
+          size: 'lg',
+          color: '#F06129',
+        }
+
+        const bubbleText: FlexBox = {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'text',
+              text: 'กำหนดรายละเอียดในการนัดครั้งนี้',
+              wrap: true,
+              size: 'lg',
+            },
+          ],
+          position: 'absolute',
+          offsetTop: '85px',
+          offsetStart: '25px',
+          paddingAll: '20px',
+          offsetEnd: '70px',
+        }
+
+        const flexBox: FlexBox = {
+          type: 'box',
+          layout: 'vertical',
+          contents: [bgImage, buttonContainer, headerText, bubbleText],
+          paddingAll: '0px',
+        }
+
+        const flexMessageTrig: FlexMessage = {
+          type: 'flex',
+          altText: 'Hello World!!',
+          contents: {
+            type: 'bubble',
+            body: flexBox,
           },
-        ],
-        position: 'absolute',
-        offsetBottom: '0px',
-        offsetStart: '0px',
-        offsetEnd: '0px',
-        paddingAll: '20px',
-      }
+        }
 
-      const headerText: FlexText = {
-        type: 'text',
-        text: '#สร้างนัดหมาย',
-        offsetTop: '25px',
-        offsetStart: '25px',
-        offsetEnd: '0px',
-        position: 'absolute',
-        weight: 'bold',
-        size: 'lg',
-        color: '#F06129',
-      }
-
-      const bubbleText: FlexBox = {
-        type: 'box',
-        layout: 'vertical',
-        contents: [
+        resolve(lineClient.replyMessage(event.replyToken, flexMessageTrig))
+      } else {
+        lineClient.replyMessage(event.replyToken, [
           {
             type: 'text',
-            text: 'กำหนดรายละเอียดในการนัดครั้งนี้',
-            wrap: true,
-            size: 'lg',
+            text: 'ตอนนี้สร้างนัดหมายได้ 1 นัดหมายต่อครั้งนะ',
+            quickReply: {
+              items: [
+                {
+                  type: 'action',
+                  imageUrl:
+                    'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficheck.png?alt=media',
+                  action: {
+                    type: 'message',
+                    label: 'เช็กนัดหมาย',
+                    text: textTrigger.STATUS_CHECK,
+                  },
+                },
+              ],
+            },
           },
-        ],
-        position: 'absolute',
-        offsetTop: '85px',
-        offsetStart: '25px',
-        paddingAll: '20px',
-        offsetEnd: '70px',
+        ])
+        reject({ error: 'Create only one event at a time' })
       }
-
-      const flexBox: FlexBox = {
-        type: 'box',
-        layout: 'vertical',
-        contents: [bgImage, buttonContainer, headerText, bubbleText],
-        paddingAll: '0px',
-      }
-
-      const flexMessageTrig: FlexMessage = {
-        type: 'flex',
-        altText: 'Hello World!!',
-        contents: {
-          type: 'bubble',
-          body: flexBox,
-        },
-      }
-
-      resolve(lineClient.replyMessage(event.replyToken, flexMessageTrig))
     } catch (error) {
       reject(error)
     }
