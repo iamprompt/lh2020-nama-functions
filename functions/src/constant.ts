@@ -13,6 +13,8 @@ export enum textTrigger {
   NAMA_EN = 'nama',
   CREATE_EVENT = '#สร้างนัดหมาย',
   STATUS_CHECK = '#เช็กสถานะ',
+  STATUS_CHECKK = '#เช็คสถานะ',
+  CANCEL_EVENT = '#ยกเลิกนัดหมาย',
 }
 
 export enum notificationType {

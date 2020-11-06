@@ -4,7 +4,7 @@ import { EVENT_DETAIL } from '../@types'
 import { lineClient } from '../config'
 import { userStatus } from '../constant'
 import { eventSummaryFlex } from '../replyComponent/scheduleSummary'
-import { createEvent, deleteEvent, getEvent, updateUserStatus } from './event'
+import { createEvent, cancelEvent, getEvent, updateUserStatus } from './event'
 import { getGroupMemberProfiles, getGroupSummary } from './group'
 import { getUserProfile } from './users'
 
@@ -52,7 +52,7 @@ export const event = functions.region('asia-northeast1').https.onRequest(async (
       return
     }
 
-    console.log(req.body)
+    // console.log(req.body)
 
     const { groupId, userId } = req.query
     const eventForm: EVENT_DETAIL = req.body
@@ -80,7 +80,7 @@ export const event = functions.region('asia-northeast1').https.onRequest(async (
     }
 
     const { groupId, eventId } = req.query
-    res.status(200).send({ status: 'success', data: await deleteEvent(<string>groupId, <string>eventId) })
+    res.status(200).send({ status: 'success', data: await cancelEvent(<string>groupId, <string>eventId) })
     return
   }
 
@@ -103,7 +103,7 @@ export const status = functions.region('asia-northeast1').https.onRequest(async 
       return
     }
 
-    console.log(req.body)
+    // console.log(req.body)
 
     const { groupId, userId, eventId, status } = req.query
     res.status(200).send({
@@ -127,7 +127,7 @@ export const sendSummary = functions.region('asia-northeast1').https.onRequest(a
       return
     }
 
-    console.log(req.body)
+    // console.log(req.body)
 
     const { groupId, eventId, flag } = req.query
 

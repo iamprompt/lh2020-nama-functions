@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions'
+// import * as functions from 'firebase-functions'
 import * as EHANDLE from './handleWebhook'
 import { WebhookEvent } from '@line/bot-sdk'
 import { eventType } from './constant'
@@ -9,7 +9,7 @@ export const handleEvents = (events: Array<WebhookEvent>) => {
     if (events.length === 0) reject({ error: 'An event object is blank.' })
     try {
       const event: WebhookEvent = events[0]
-      functions.logger.log(event)
+      // functions.logger.log(event)
 
       // Handle Each Type
       switch (event.type) {

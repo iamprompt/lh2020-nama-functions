@@ -4,8 +4,8 @@ import { WebhookRequestBody } from '@line/bot-sdk'
 export * from './api'
 
 export const LINEHook = functions.region('asia-northeast1').https.onRequest(async (req, res) => {
-  functions.logger.info(req.method)
-  functions.logger.info(req.body)
+  // functions.logger.info(req.method)
+  // functions.logger.info(req.body)
 
   if (req.method === 'POST') {
     const body: WebhookRequestBody = req.body

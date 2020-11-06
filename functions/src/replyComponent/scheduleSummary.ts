@@ -1,7 +1,7 @@
-import { FlexBox, FlexContainer, FlexMessage, FlexSeparator } from '@line/bot-sdk'
+import { FlexBox, FlexContainer, FlexMessage, FlexSeparator, FlexSpacer } from '@line/bot-sdk'
 import { FIRESTORE_EVENT_DETAIL } from '../@types'
 import { getEvent } from '../api/event'
-import { notificationType } from '../constant'
+import { notificationType, userStatus } from '../constant'
 
 import { format } from 'date-fns'
 import { th } from 'date-fns/locale'
@@ -28,6 +28,8 @@ export const eventSummaryFlex = async (groupId: string, eventId: string, flag: n
     altText: 'มีนัดหมายใหม่',
     contents: FlexContent,
   }
+
+  // console.log(FlexMessageContainer)
 
   return FlexMessageContainer
 }
@@ -66,8 +68,8 @@ const FooterEvent = (
             },
           ],
           paddingTop: '0px',
-          paddingStart: '20px',
-          paddingEnd: '20px',
+          paddingStart: '10px',
+          paddingEnd: '10px',
           paddingBottom: '10px',
         },
       ],
@@ -108,7 +110,8 @@ const FooterEvent = (
           action: {
             type: 'postback',
             label: 'กำลังเดินทาง',
-            data: 'acknowledge',
+            data: `traveling?groupId=${groupId}&eventId=${eventId}`,
+            text: 'กำลังไปน้าาาา',
           },
           style: 'primary',
           color: '#F06129',
@@ -116,9 +119,10 @@ const FooterEvent = (
         {
           type: 'button',
           action: {
-            type: 'uri',
+            type: 'postback',
             label: 'ถึงแล้ว',
-            uri: 'http://linecorp.com/',
+            data: `arrived?groupId=${groupId}&eventId=${eventId}`,
+            text: 'ถึงแล้วน้าาา',
           },
           color: '#F06129',
           style: 'primary',
@@ -162,9 +166,7 @@ const HeaderEvent = (event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
   const headerContainer: FlexBox = {
     type: 'box',
     layout: 'horizontal',
-    contents: [],
     paddingAll: '20px',
-    spacing: 'md',
     height: '80px',
     // @ts-expect-error
     background: {
@@ -174,6 +176,7 @@ const HeaderEvent = (event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
       endColor: '#FF9A3D',
     },
     alignItems: 'center',
+    contents: [],
   }
 
   if (
@@ -185,20 +188,21 @@ const HeaderEvent = (event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
       {
         type: 'box',
         layout: 'vertical',
+        position: 'absolute',
+        offsetStart: '20px',
+        offsetEnd: '80px',
         contents: [
           {
             type: 'text',
             text: event.eventName,
-            color: '#ffffff',
-            size: 'md',
-            flex: 4,
             weight: 'bold',
+            size: 'md',
+            color: '#FFFFFF',
+            align: 'start',
+            gravity: 'center',
             wrap: true,
           },
         ],
-        position: 'absolute',
-        offsetStart: '20px',
-        offsetEnd: '80px',
       },
       {
         type: 'box',
@@ -208,14 +212,15 @@ const HeaderEvent = (event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
             type: 'image',
             url:
               'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2FProfile.jpg?alt=media',
-            position: 'relative',
-            aspectMode: 'cover',
+            align: 'end',
+            gravity: 'center',
             size: 'xs',
             aspectRatio: '1:1',
+            aspectMode: 'cover',
           },
         ],
         position: 'absolute',
-        offsetEnd: '15px',
+        offsetEnd: '20px',
         cornerRadius: '100px',
       },
     ]
@@ -306,6 +311,16 @@ const HeaderEvent = (event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
 
 const BodyEvent = (groupId: string, event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
   return new Promise<FlexBox>(async (resolve, reject) => {
+    const Space: FlexSpacer = {
+      type: 'spacer',
+      size: 'md',
+    }
+
+    const Separator: FlexSeparator = {
+      type: 'separator',
+      margin: 'lg',
+    }
+
     if (
       flag === notificationType.SUMMARY_EVENT ||
       flag === notificationType.NOTI_1D ||
@@ -314,14 +329,9 @@ const BodyEvent = (groupId: string, event: FIRESTORE_EVENT_DETAIL, flag: notific
       const summaryDetailContainer: FlexBox = {
         type: 'box',
         layout: 'vertical',
-        contents: [
-          {
-            type: 'box',
-            layout: 'horizontal',
-            margin: 'lg',
-            contents: [],
-          },
-        ],
+        paddingStart: '20px',
+        paddingEnd: '20px',
+        contents: [],
       }
 
       const DateTime = event.eventDateTime?.toDate()
@@ -337,15 +347,15 @@ const BodyEvent = (groupId: string, event: FIRESTORE_EVENT_DETAIL, flag: notific
             text: 'วันที่',
             weight: 'bold',
             size: 'sm',
+            align: 'start',
           },
           {
             type: 'text',
             text: eventDate,
-            weight: 'bold',
-            size: 'md',
+            align: 'start',
+            margin: 'xs',
           },
         ],
-        width: '50%',
       }
 
       const TimeBox: FlexBox = {
@@ -355,16 +365,15 @@ const BodyEvent = (groupId: string, event: FIRESTORE_EVENT_DETAIL, flag: notific
           {
             type: 'text',
             text: 'เวลา',
-            align: 'end',
-            size: 'sm',
             weight: 'bold',
+            size: 'sm',
+            align: 'end',
           },
           {
             type: 'text',
             text: eventTime,
             align: 'end',
-            weight: 'bold',
-            size: 'md',
+            margin: 'xs',
           },
         ],
       }
@@ -376,11 +385,6 @@ const BodyEvent = (groupId: string, event: FIRESTORE_EVENT_DETAIL, flag: notific
         contents: [DateBox, TimeBox],
       }
 
-      const Separator: FlexSeparator = {
-        type: 'separator',
-        margin: 'lg',
-      }
-
       const LocationBox: FlexBox = {
         type: 'box',
         layout: 'vertical',
@@ -390,18 +394,19 @@ const BodyEvent = (groupId: string, event: FIRESTORE_EVENT_DETAIL, flag: notific
             text: 'สถานที่',
             weight: 'bold',
             size: 'sm',
+            align: 'start',
           },
           {
             type: 'text',
             text: event.eventLocation,
-            weight: 'bold',
+            margin: 'sm',
           },
         ],
       }
 
       const LocationBoxRow: FlexBox = {
         type: 'box',
-        layout: 'horizontal',
+        layout: 'vertical',
         margin: 'lg',
         contents: [LocationBox],
       }
@@ -422,16 +427,17 @@ const BodyEvent = (groupId: string, event: FIRESTORE_EVENT_DETAIL, flag: notific
           {
             type: 'text',
             text: 'สมาชิก',
-            size: 'sm',
             weight: 'bold',
+            size: 'sm',
+            align: 'start',
           },
           {
             type: 'text',
             text: attendeeArray.join(', '),
-            size: 'md',
-            wrap: true,
             color: '#29A1C7',
+            align: 'start',
             margin: 'sm',
+            wrap: true,
           },
         ],
       }
@@ -439,20 +445,84 @@ const BodyEvent = (groupId: string, event: FIRESTORE_EVENT_DETAIL, flag: notific
       const AttendeeBoxRow: FlexBox = {
         type: 'box',
         layout: 'vertical',
+        margin: 'lg',
         contents: [AttendeeBox],
       }
 
-      summaryDetailContainer.contents.push(DateTimeBoxRow, Separator, LocationBoxRow, Separator, AttendeeBoxRow)
+      summaryDetailContainer.contents.push(DateTimeBoxRow, Separator, LocationBoxRow, Separator, AttendeeBoxRow, Space)
 
       resolve(summaryDetailContainer)
     } else if (flag === notificationType.NOTI_EVENT_TIME || flag === notificationType.NOTI_EVERY_15M) {
       const AttendeeContainer: FlexBox = {
         type: 'box',
         layout: 'vertical',
+        paddingBottom: '20px',
         contents: [],
       }
 
-      AttendeeContainer.contents.push(templatePersonStatus('Prompt', 'กำลังเดินทาง'))
+      // console.log(event)
+
+      const attendee = event.attendeeList
+
+      attendee.sort((a, b) => {
+        const aStatus =
+          a.status === userStatus.UNSEEN
+            ? 0
+            : a.status === userStatus.ACKNOWLEDGED
+            ? 1
+            : a.status === userStatus.TRAVELING
+            ? 2
+            : a.status === userStatus.ARRIVED
+            ? 3
+            : 0
+
+        const bStatus =
+          b.status === userStatus.UNSEEN
+            ? 0
+            : b.status === userStatus.ACKNOWLEDGED
+            ? 1
+            : b.status === userStatus.TRAVELING
+            ? 2
+            : b.status === userStatus.ARRIVED
+            ? 3
+            : 0
+
+        if (aStatus < bStatus) {
+          return 1
+        } else {
+          return -1
+        }
+      })
+
+      // console.log(attendee)
+
+      for (let i = 0; i < attendee.length; i++) {
+        const a = attendee[i]
+        const StatusText =
+          a.status === userStatus.UNSEEN
+            ? 'ไม่รับรู้ววววว'
+            : a.status === userStatus.ACKNOWLEDGED
+            ? 'รู้ล้าววววว'
+            : a.status === userStatus.TRAVELING
+            ? 'ออกจากบ้านละ'
+            : a.status === userStatus.ARRIVED
+            ? 'ถึงนานละ'
+            : ''
+
+        if (
+          a.status === userStatus.UNSEEN ||
+          a.status === userStatus.ACKNOWLEDGED ||
+          a.status === userStatus.TRAVELING
+        ) {
+          console.log(a)
+
+          // @ts-expect-error
+          AttendeeContainer.contents.push(templatePersonStatus(a.displayName, StatusText))
+          if (AttendeeContainer.contents.length === 5) break
+        }
+      }
+      // AttendeeContainer.contents.push(templatePersonStatus('Prompt', 'หลกดหกดห'))
+      // console.log(AttendeeContainer)
 
       resolve(AttendeeContainer)
     }
