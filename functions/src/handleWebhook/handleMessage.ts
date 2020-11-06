@@ -1,4 +1,3 @@
-import * as functions from 'firebase-functions'
 import {
   FlexBox,
   FlexImage,
@@ -10,196 +9,210 @@ import {
   TextMessage,
 } from '@line/bot-sdk'
 import { lineClient } from '../config'
+import { messageType, textTrigger } from '../constant'
 import { eventSummaryFlex } from '../replyComponent/scheduleSummary'
-import { event as ev } from '../mockData'
-import { messageType, textTrigger, notificationType } from '../constant'
 
 export const handleMessage = (event: MessageEvent) => {
-  functions.logger.log(event.message.type)
-  const { type } = event.message
+  return new Promise(async (resolve, reject) => {
+    try {
+      const { type } = event.message
 
-  switch (type) {
-    case messageType.TEXT:
-      handleMessageText(event)
-      break
+      switch (type) {
+        case messageType.TEXT:
+          resolve(await handleMessageText(event))
+          break
 
-    default:
-      break
-  }
+        default:
+          reject({ error: 'Type is out of bound' })
+          break
+      }
+    } catch (error) {
+      reject(error)
+    }
+  })
 }
 
 const handleMessageText = async (event: MessageEvent) => {
-  const message = <TextEventMessage>event.message
+  return new Promise(async (resolve, reject) => {
+    try {
+      const message = <TextEventMessage>event.message
 
-  if (message.text === textTrigger.NAMA_TH || message.text.toLowerCase() === textTrigger.NAMA_EN) {
-    manaCallEvent(event)
-  } else if (message.text === textTrigger.CREATE_EVENT) {
-    manaCreateEvent(event)
-  } else if (message.text === textTrigger.STATUS_CHECK) {
-    manaCheckStatus(event)
-  } else if (message.text === '#บายนามะ') {
-    if (event.source.type === 'room') {
-      lineClient.leaveRoom(event.source.roomId)
-    } else if (event.source.type === 'group') {
-      lineClient.leaveGroup(event.source.groupId)
-    } else {
-      lineClient.replyMessage(event.replyToken, {
-        type: 'text',
-        text: 'I cannot leave a 1-on-1 chat!',
-      })
+      if (message.text === textTrigger.NAMA_TH || message.text.toLowerCase() === textTrigger.NAMA_EN) {
+        resolve(await manaCallEvent(event))
+      } else if (message.text === textTrigger.CREATE_EVENT) {
+        resolve(await manaCreateEvent(event))
+      } else if (message.text === textTrigger.STATUS_CHECK) {
+        resolve(await manaCheckStatus(event))
+      } else if (message.text === '#บายนามะ') {
+        if (event.source.type === 'room') {
+          resolve(await lineClient.leaveRoom(event.source.roomId))
+        } else if (event.source.type === 'group') {
+          resolve(await lineClient.leaveGroup(event.source.groupId))
+        } else {
+          resolve(
+            await lineClient.replyMessage(event.replyToken, {
+              type: 'text',
+              text: 'I cannot leave a 1-on-1 chat!',
+            }),
+          )
+        }
+      } else {
+        if (event.source.type === 'group') {
+          resolve(
+            await lineClient.replyMessage(event.replyToken, [
+              <FlexMessage>await eventSummaryFlex(event.source.groupId, 'h6nRmZAtfnLW0xY8oCJK', 0),
+              // eventSummaryFlex(ev, notificationType.NOTI_1D),
+              // eventSummaryFlex(ev, notificationType.NOTI_60M),
+              // eventSummaryFlex(ev, notificationType.NOTI_EVENT_TIME),
+              // eventSummaryFlex(ev, notificationType.NOTI_EVERY_15M),
+            ]),
+          )
+        }
+      }
+    } catch (error) {
+      reject(error)
     }
-  } else {
-    lineClient
-      .replyMessage(event.replyToken, [
-        eventSummaryFlex(ev, notificationType.SUMMARY_EVENT),
-        eventSummaryFlex(ev, notificationType.NOTI_1D),
-        eventSummaryFlex(ev, notificationType.NOTI_60M),
-        eventSummaryFlex(ev, notificationType.NOTI_EVENT_TIME),
-        eventSummaryFlex(ev, notificationType.NOTI_EVERY_15M),
-      ])
-      .then(() => {})
-      .catch((err) => {
-        functions.logger.error(err)
-      })
-  }
+  })
 }
 
 const manaCallEvent = (event: MessageEvent) => {
-  const quickTrig: QuickReply = {
-    items: [
-      {
-        type: 'action',
-        imageUrl:
-          'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficalendar.png?alt=media',
-        action: {
-          type: 'message',
-          label: 'สร้างนัดหมาย',
-          text: textTrigger.CREATE_EVENT,
-        },
-      },
-      {
-        type: 'action',
-        imageUrl:
-          'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficheck.png?alt=media',
-        action: {
-          type: 'message',
-          label: 'เช็กสถานะ',
-          text: textTrigger.STATUS_CHECK,
-        },
-      },
-    ],
-  }
+  return new Promise(async (resolve, reject) => {
+    try {
+      const quickTrig: QuickReply = {
+        items: [
+          {
+            type: 'action',
+            imageUrl:
+              'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficalendar.png?alt=media',
+            action: {
+              type: 'message',
+              label: 'สร้างนัดหมาย',
+              text: textTrigger.CREATE_EVENT,
+            },
+          },
+          {
+            type: 'action',
+            imageUrl:
+              'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficheck.png?alt=media',
+            action: {
+              type: 'message',
+              label: 'เช็กสถานะ',
+              text: textTrigger.STATUS_CHECK,
+            },
+          },
+        ],
+      }
 
-  const textTrig: TextMessage = {
-    type: 'text',
-    text: 'มาแล้ววว ใครเรียกนามะเนี่ย ! มีอะไรให้ช่วยก็บอกเลยน้า',
-    quickReply: quickTrig,
-  }
+      const textTrig: TextMessage = {
+        type: 'text',
+        text: 'มาแล้ววว ใครเรียกนามะเนี่ย ! มีอะไรให้ช่วยก็บอกเลยน้า',
+        quickReply: quickTrig,
+      }
 
-  lineClient
-    .replyMessage(event.replyToken, textTrig)
-    .then((v) => {
-      functions.logger.log(v)
-    })
-    .catch((err) => {
-      functions.logger.error(err)
-    })
+      resolve(lineClient.replyMessage(event.replyToken, textTrig))
+    } catch (error) {
+      reject(error)
+    }
+  })
 }
 
 const manaCreateEvent = (event: MessageEvent) => {
-  const bgImage: FlexImage = {
-    type: 'image',
-    size: 'full',
-    aspectMode: 'cover',
-    gravity: 'center',
-    aspectRatio: '1:1',
-    url:
-      'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Fflex%2FFlex_CreateEvent.png?alt=media&p=1',
-  }
+  return new Promise((resolve, reject) => {
+    try {
+      const bgImage: FlexImage = {
+        type: 'image',
+        size: 'full',
+        aspectMode: 'cover',
+        gravity: 'center',
+        aspectRatio: '1:1',
+        url:
+          'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Fflex%2FFlex_CreateEvent.png?alt=media&p=1',
+      }
 
-  const buttonContainer: FlexBox = {
-    type: 'box',
-    layout: 'horizontal',
-    contents: [
-      {
+      const buttonContainer: FlexBox = {
+        type: 'box',
+        layout: 'horizontal',
+        contents: [
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'button',
+                action: {
+                  type: 'uri',
+                  label: 'เพิ่มนัดหมาย',
+                  uri: 'http://google.com/', // Todo: Edit Action to liff
+                },
+                color: '#F06129',
+                style: 'primary',
+              },
+            ],
+            spacing: 'xs',
+          },
+        ],
+        position: 'absolute',
+        offsetBottom: '0px',
+        offsetStart: '0px',
+        offsetEnd: '0px',
+        paddingAll: '20px',
+      }
+
+      const headerText: FlexText = {
+        type: 'text',
+        text: '#สร้างนัดหมาย',
+        offsetTop: '25px',
+        offsetStart: '25px',
+        offsetEnd: '0px',
+        position: 'absolute',
+        weight: 'bold',
+        size: 'lg',
+        color: '#F06129',
+      }
+
+      const bubbleText: FlexBox = {
         type: 'box',
         layout: 'vertical',
         contents: [
           {
-            type: 'button',
-            action: {
-              type: 'uri',
-              label: 'เพิ่มนัดหมาย',
-              uri: 'http://google.com/', // Todo: Edit Action to liff
-            },
-            color: '#F06129',
-            style: 'primary',
+            type: 'text',
+            text: 'กำหนดรายละเอียดในการนัดครั้งนี้',
+            wrap: true,
+            size: 'lg',
           },
         ],
-        spacing: 'xs',
-      },
-    ],
-    position: 'absolute',
-    offsetBottom: '0px',
-    offsetStart: '0px',
-    offsetEnd: '0px',
-    paddingAll: '20px',
-  }
+        position: 'absolute',
+        offsetTop: '85px',
+        offsetStart: '25px',
+        paddingAll: '20px',
+        offsetEnd: '70px',
+      }
 
-  const headerText: FlexText = {
-    type: 'text',
-    text: '#สร้างนัดหมาย',
-    offsetTop: '25px',
-    offsetStart: '25px',
-    offsetEnd: '0px',
-    position: 'absolute',
-    weight: 'bold',
-    size: 'lg',
-    color: '#F06129',
-  }
+      const flexBox: FlexBox = {
+        type: 'box',
+        layout: 'vertical',
+        contents: [bgImage, buttonContainer, headerText, bubbleText],
+        paddingAll: '0px',
+      }
 
-  const bubbleText: FlexBox = {
-    type: 'box',
-    layout: 'vertical',
-    contents: [
-      {
-        type: 'text',
-        text: 'กำหนดรายละเอียดในการนัดครั้งนี้',
-        wrap: true,
-        size: 'lg',
-      },
-    ],
-    position: 'absolute',
-    offsetTop: '85px',
-    offsetStart: '25px',
-    paddingAll: '20px',
-    offsetEnd: '70px',
-  }
+      const flexMessageTrig: FlexMessage = {
+        type: 'flex',
+        altText: 'Hello World!!',
+        contents: {
+          type: 'bubble',
+          body: flexBox,
+        },
+      }
 
-  const flexBox: FlexBox = {
-    type: 'box',
-    layout: 'vertical',
-    contents: [bgImage, buttonContainer, headerText, bubbleText],
-    paddingAll: '0px',
-  }
-
-  const flexMessageTrig: FlexMessage = {
-    type: 'flex',
-    altText: 'Hello World!!',
-    contents: {
-      type: 'bubble',
-      body: flexBox,
-    },
-  }
-
-  lineClient
-    .replyMessage(event.replyToken, flexMessageTrig)
-    .then((v) => {
-      functions.logger.log(v)
-    })
-    .catch((err) => {
-      functions.logger.error(err)
-    })
+      resolve(lineClient.replyMessage(event.replyToken, flexMessageTrig))
+    } catch (error) {
+      reject(error)
+    }
+  })
 }
 
-const manaCheckStatus = (event: MessageEvent) => {}
+const manaCheckStatus = (event: MessageEvent) => {
+  return new Promise((resolve, reject) => {
+    resolve()
+  })
+}

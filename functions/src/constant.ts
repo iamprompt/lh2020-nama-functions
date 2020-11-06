@@ -22,3 +22,22 @@ export enum notificationType {
   NOTI_EVENT_TIME,
   NOTI_EVERY_15M,
 }
+
+export enum eventType {
+  MESSAGE = 'message',
+  UNSEND = 'unsend',
+  FOLLOW = 'follow',
+  UNFOLLOW = 'unfollow',
+  JOIN = 'join',
+  LEAVE = 'leave',
+  MEM_JOIN = 'memberJoined',
+  MEM_LEAVE = 'memberLeft',
+  POSTBACK = 'postback',
+}
+
+export enum userStatus {
+  UNSEEN = 'unseen',
+  ACKNOWLEDGED = 'acknowledged',
+  TRAVELING = 'traveling',
+  ARRIVED = 'arrived',
+}

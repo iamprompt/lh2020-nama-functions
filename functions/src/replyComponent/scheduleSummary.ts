@@ -1,13 +1,19 @@
 import { FlexBox, FlexContainer, FlexMessage, FlexSeparator } from '@line/bot-sdk'
-import { EVENT_DETAIL } from '../@types'
+import { FIRESTORE_EVENT_DETAIL } from '../@types'
+import { getEvent } from '../api/event'
 import { notificationType } from '../constant'
 
-export const eventSummaryFlex = (event: EVENT_DETAIL, flag: notificationType) => {
-  const HeaderContent = HeaderEvent(event, flag)
+import { format } from 'date-fns'
+import { th } from 'date-fns/locale'
+import { lineClient } from '../config'
 
-  const BodyContent = BodyEvent(event, flag)
+export const eventSummaryFlex = async (groupId: string, eventId: string, flag: notificationType) => {
+  const event = await getEvent(groupId, eventId)
+  const HeaderContent = HeaderEvent(<FIRESTORE_EVENT_DETAIL>event, flag)
 
-  const Footer = FooterEvent(event, flag)
+  const BodyContent = await BodyEvent(groupId, <FIRESTORE_EVENT_DETAIL>event, flag)
+
+  const Footer = FooterEvent(groupId, eventId, <FIRESTORE_EVENT_DETAIL>event, flag)
 
   const FlexContent: FlexContainer = {
     type: 'bubble',
@@ -26,7 +32,12 @@ export const eventSummaryFlex = (event: EVENT_DETAIL, flag: notificationType) =>
   return FlexMessageContainer
 }
 
-const FooterEvent = (event: EVENT_DETAIL, flag: notificationType) => {
+const FooterEvent = (
+  groupId: string,
+  eventId: string,
+  event: FIRESTORE_EVENT_DETAIL,
+  flag: notificationType | number,
+) => {
   const textLabel: string =
     flag === notificationType.NOTI_60M
       ? 'ใกล้แล้ว ใกล้แล้ว ตื่นเต้น ตื่นเต้น'
@@ -48,7 +59,7 @@ const FooterEvent = (event: EVENT_DETAIL, flag: notificationType) => {
               action: {
                 type: 'postback',
                 label: 'โอเคเลย',
-                data: `acknowledge&groupId=${event.groupId}&eventId=${event.eventId}`,
+                data: `acknowledge?groupId=${groupId}&eventId=${eventId}`,
               },
               style: 'primary',
               color: '#F06129',
@@ -147,7 +158,7 @@ const FooterEvent = (event: EVENT_DETAIL, flag: notificationType) => {
   return
 }
 
-const HeaderEvent = (event: EVENT_DETAIL, flag: notificationType) => {
+const HeaderEvent = (event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
   const headerContainer: FlexBox = {
     type: 'box',
     layout: 'horizontal',
@@ -177,7 +188,7 @@ const HeaderEvent = (event: EVENT_DETAIL, flag: notificationType) => {
         contents: [
           {
             type: 'text',
-            text: event.eventTitle,
+            text: event.eventName,
             color: '#ffffff',
             size: 'md',
             flex: 4,
@@ -270,7 +281,7 @@ const HeaderEvent = (event: EVENT_DETAIL, flag: notificationType) => {
           },
           {
             type: 'text',
-            text: event.eventTitle,
+            text: event.eventName,
             size: 'sm',
             color: '#ffffff',
             weight: 'regular',
@@ -293,146 +304,161 @@ const HeaderEvent = (event: EVENT_DETAIL, flag: notificationType) => {
   return
 }
 
-const BodyEvent = (event: EVENT_DETAIL, flag: notificationType) => {
-  if (
-    flag === notificationType.SUMMARY_EVENT ||
-    flag === notificationType.NOTI_1D ||
-    flag === notificationType.NOTI_60M
-  ) {
-    const summaryDetailContainer: FlexBox = {
-      type: 'box',
-      layout: 'vertical',
-      contents: [
-        {
-          type: 'box',
-          layout: 'horizontal',
-          margin: 'lg',
-          contents: [],
-        },
-      ],
+const BodyEvent = (groupId: string, event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
+  return new Promise<FlexBox>(async (resolve, reject) => {
+    if (
+      flag === notificationType.SUMMARY_EVENT ||
+      flag === notificationType.NOTI_1D ||
+      flag === notificationType.NOTI_60M
+    ) {
+      const summaryDetailContainer: FlexBox = {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            margin: 'lg',
+            contents: [],
+          },
+        ],
+      }
+
+      const DateTime = event.eventDateTime?.toDate()
+      const eventDate = format(<Date>DateTime, 'dd MMM yyyy', { locale: th })
+      const eventTime = `${format(<Date>DateTime, 'HH:mm', { locale: th })} น.`
+
+      const DateBox: FlexBox = {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: 'วันที่',
+            weight: 'bold',
+            size: 'sm',
+          },
+          {
+            type: 'text',
+            text: eventDate,
+            weight: 'bold',
+            size: 'md',
+          },
+        ],
+        width: '50%',
+      }
+
+      const TimeBox: FlexBox = {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: 'เวลา',
+            align: 'end',
+            size: 'sm',
+            weight: 'bold',
+          },
+          {
+            type: 'text',
+            text: eventTime,
+            align: 'end',
+            weight: 'bold',
+            size: 'md',
+          },
+        ],
+      }
+
+      const DateTimeBoxRow: FlexBox = {
+        type: 'box',
+        layout: 'horizontal',
+        margin: 'none',
+        contents: [DateBox, TimeBox],
+      }
+
+      const Separator: FlexSeparator = {
+        type: 'separator',
+        margin: 'lg',
+      }
+
+      const LocationBox: FlexBox = {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: 'สถานที่',
+            weight: 'bold',
+            size: 'sm',
+          },
+          {
+            type: 'text',
+            text: event.eventLocation,
+            weight: 'bold',
+          },
+        ],
+      }
+
+      const LocationBoxRow: FlexBox = {
+        type: 'box',
+        layout: 'horizontal',
+        margin: 'lg',
+        contents: [LocationBox],
+      }
+
+      const attendeeArray = []
+
+      for (let i = 0; i < event.attendeeList.length; i++) {
+        const attendee = event.attendeeList[i]
+        const profile = await lineClient.getGroupMemberProfile(groupId, attendee.userId)
+        // console.log(profile)
+        attendeeArray.push(`@${profile.displayName}`)
+      }
+
+      const AttendeeBox: FlexBox = {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: 'สมาชิก',
+            size: 'sm',
+            weight: 'bold',
+          },
+          {
+            type: 'text',
+            text: attendeeArray.join(', '),
+            size: 'md',
+            wrap: true,
+            color: '#29A1C7',
+            margin: 'sm',
+          },
+        ],
+      }
+
+      const AttendeeBoxRow: FlexBox = {
+        type: 'box',
+        layout: 'vertical',
+        contents: [AttendeeBox],
+      }
+
+      summaryDetailContainer.contents.push(DateTimeBoxRow, Separator, LocationBoxRow, Separator, AttendeeBoxRow)
+
+      resolve(summaryDetailContainer)
+    } else if (flag === notificationType.NOTI_EVENT_TIME || flag === notificationType.NOTI_EVERY_15M) {
+      const AttendeeContainer: FlexBox = {
+        type: 'box',
+        layout: 'vertical',
+        contents: [],
+      }
+
+      AttendeeContainer.contents.push(templatePersonStatus('Prompt', 'กำลังเดินทาง'))
+
+      resolve(AttendeeContainer)
     }
 
-    const DateBox: FlexBox = {
-      type: 'box',
-      layout: 'vertical',
-      contents: [
-        {
-          type: 'text',
-          text: 'วันที่',
-          weight: 'bold',
-          size: 'sm',
-        },
-        {
-          type: 'text',
-          text: event.eventDate,
-          weight: 'bold',
-          size: 'md',
-        },
-      ],
-      width: '50%',
-    }
-
-    const TimeBox: FlexBox = {
-      type: 'box',
-      layout: 'vertical',
-      contents: [
-        {
-          type: 'text',
-          text: 'เวลา',
-          align: 'end',
-          size: 'sm',
-          weight: 'bold',
-        },
-        {
-          type: 'text',
-          text: event.eventTime,
-          align: 'end',
-          weight: 'bold',
-          size: 'md',
-        },
-      ],
-    }
-
-    const DateTimeBoxRow: FlexBox = {
-      type: 'box',
-      layout: 'horizontal',
-      margin: 'none',
-      contents: [DateBox, TimeBox],
-    }
-
-    const Separator: FlexSeparator = {
-      type: 'separator',
-      margin: 'lg',
-    }
-
-    const LocationBox: FlexBox = {
-      type: 'box',
-      layout: 'vertical',
-      contents: [
-        {
-          type: 'text',
-          text: 'สถานที่',
-          weight: 'bold',
-          size: 'sm',
-        },
-        {
-          type: 'text',
-          text: event.eventLocation,
-          weight: 'bold',
-        },
-      ],
-    }
-
-    const LocationBoxRow: FlexBox = {
-      type: 'box',
-      layout: 'horizontal',
-      margin: 'lg',
-      contents: [LocationBox],
-    }
-
-    const AttendeeBox: FlexBox = {
-      type: 'box',
-      layout: 'vertical',
-      contents: [
-        {
-          type: 'text',
-          text: 'สมาชิก',
-          size: 'sm',
-          weight: 'bold',
-        },
-        {
-          type: 'text',
-          text: '@ampare, @Got, @Prompt, @Time,  @Palm',
-          size: 'md',
-          wrap: true,
-          color: '#29A1C7',
-          margin: 'sm',
-        },
-      ],
-    }
-
-    const AttendeeBoxRow: FlexBox = {
-      type: 'box',
-      layout: 'vertical',
-      contents: [AttendeeBox],
-    }
-
-    summaryDetailContainer.contents.push(DateTimeBoxRow, Separator, LocationBoxRow, Separator, AttendeeBoxRow)
-
-    return summaryDetailContainer
-  } else if (flag === notificationType.NOTI_EVENT_TIME || flag === notificationType.NOTI_EVERY_15M) {
-    const AttendeeContainer: FlexBox = {
-      type: 'box',
-      layout: 'vertical',
-      contents: [],
-    }
-
-    AttendeeContainer.contents.push(templatePersonStatus('Prompt', 'กำลังเดินทาง'))
-
-    return AttendeeContainer
-  }
-
-  return
+    reject()
+  })
 }
 
 const templatePersonStatus = (userName: string, statusFlag: string) => {

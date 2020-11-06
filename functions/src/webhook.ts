@@ -1,60 +1,55 @@
 import * as functions from 'firebase-functions'
 import * as EHANDLE from './handleWebhook'
 import { WebhookEvent } from '@line/bot-sdk'
-
-enum eventType {
-  MESSAGE = 'message',
-  UNSEND = 'unsend',
-  FOLLOW = 'follow',
-  UNFOLLOW = 'unfollow',
-  JOIN = 'join',
-  LEAVE = 'leave',
-  MEM_JOIN = 'memberJoined',
-  MEM_LEAVE = 'memberLeft',
-  POSTBACK = 'postback',
-}
+import { eventType } from './constant'
 
 export const handleEvents = (events: Array<WebhookEvent>) => {
-  // Define events as a variable
-  if (events.length === 0) return
-  const event: WebhookEvent = events[0]
-  functions.logger.log(event)
+  return new Promise(async (resolve, reject) => {
+    // Define events as a variable
+    if (events.length === 0) reject({ error: 'An event object is blank.' })
+    try {
+      const event: WebhookEvent = events[0]
+      functions.logger.log(event)
 
-  // Handle Each Type
-  switch (event.type) {
-    case eventType.MESSAGE:
-      EHANDLE.handleMessage(event)
-      break
+      // Handle Each Type
+      switch (event.type) {
+        case eventType.MESSAGE:
+          resolve(await EHANDLE.handleMessage(event))
+          break
 
-    case eventType.FOLLOW:
-      EHANDLE.handleFollow(event)
-      break
+        case eventType.FOLLOW:
+          resolve(await EHANDLE.handleFollow(event))
+          break
 
-    case eventType.UNFOLLOW:
-      EHANDLE.handleUnfollow(event)
-      break
+        case eventType.UNFOLLOW:
+          resolve(await EHANDLE.handleUnfollow(event))
+          break
 
-    case eventType.JOIN:
-      EHANDLE.handleJoined(event)
-      break
+        case eventType.JOIN:
+          resolve(await EHANDLE.handleJoined(event))
+          break
 
-    case eventType.LEAVE:
-      EHANDLE.handleLeave(event)
-      break
+        case eventType.LEAVE:
+          resolve(await EHANDLE.handleLeave(event))
+          break
 
-    case eventType.MEM_JOIN:
-      EHANDLE.handleMemJoined(event)
-      break
+        case eventType.MEM_JOIN:
+          resolve(await EHANDLE.handleMemJoined(event))
+          break
 
-    case eventType.MEM_LEAVE:
-      EHANDLE.handleMemLeave(event)
-      break
+        case eventType.MEM_LEAVE:
+          resolve(await EHANDLE.handleMemLeave(event))
+          break
 
-    case eventType.POSTBACK:
-      EHANDLE.handlePostback(event)
-      break
+        case eventType.POSTBACK:
+          resolve(await EHANDLE.handlePostback(event))
+          break
 
-    default:
-      break
-  }
+        default:
+          break
+      }
+    } catch (error) {
+      resolve(error)
+    }
+  })
 }

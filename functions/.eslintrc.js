@@ -25,5 +25,6 @@ module.exports = {
     'no-empty': 0,
     '@typescript-eslint/ban-ts-comment': 0,
     'no-case-declarations': 0,
+    'no-async-promise-executor': 0,
   },
 }

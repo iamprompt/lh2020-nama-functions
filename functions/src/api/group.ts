@@ -11,6 +11,10 @@ export const getGroupMemberProfiles = async (groupId: string) => {
   return groupMemberProfiles
 }
 
+export const getGroupMemberProfile = (groupId: string, userId: string) => {
+  return lineClient.getGroupMemberProfile(groupId, userId)
+}
+
 export const getGroupSummary = async (groupId: string) => {
   const groupInfo = await lineClient.getGroupSummary(groupId)
 
