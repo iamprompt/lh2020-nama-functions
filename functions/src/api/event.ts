@@ -1,27 +1,46 @@
-import { firestore, firestoreX, lineClient } from '../config'
+import { admin, lineClient } from '../config'
 import { EVENT_DETAIL, FIRESTORE_EVENT_DETAIL } from '../@types'
 import { userStatus } from '../constant'
+import { eventSummaryFlex } from '../replyComponent/scheduleSummary'
+import { FlexMessage } from '@line/bot-sdk'
 
-export const createEvent = (groupId: string, userId: string, event: EVENT_DETAIL) => {
+export const createEvent = (groupId: string, /*userId: string,*/ event: EVENT_DETAIL) => {
   return new Promise(async (resolve, reject) => {
     const eventDateTimeText = `${event.eventDate} ${event.eventTime} UTC+7`
     const DateTime = Date.parse(eventDateTimeText)
 
     const finalEvent = {
       ...event,
-      ...{ ownerId: userId },
-      ...{ eventDateTime: firestoreX.Timestamp.fromMillis(DateTime) },
+      //...{ ownerId: userId },
+      ...{ eventDateTime: admin.firestore.Timestamp.fromMillis(DateTime) },
     }
     // console.log(finalEvent)
 
-    const eventRef = firestore.collection('nama').doc(groupId).collection('events')
+    finalEvent.attendeeList = finalEvent.attendeeList.map((a) => {
+      return {
+        ...a,
+        last_updated: admin.firestore.Timestamp.now(),
+      }
+    })
+
+    console.log(groupId)
+    console.log(event)
+
+    const eventRef = admin.firestore().collection('nama').doc(groupId).collection('events')
     const activeEventSnap = await eventRef.where('eventStatus', '==', 'active').get()
 
     // console.log(activeEventSnap)
     if (activeEventSnap.empty) {
       eventRef.add(finalEvent as FIRESTORE_EVENT_DETAIL).then(
-        (docRef) => {
+        async (docRef) => {
           // console.log(docRef.id)
+          lineClient
+            .pushMessage(<string>groupId, [
+              <FlexMessage>await eventSummaryFlex(<string>groupId, <string>docRef.id, '0'),
+            ])
+            .then((result) => console.log(result))
+            .catch((err) => console.log(err))
+
           resolve({ eventId: docRef.id })
         },
         (error) => {
@@ -30,6 +49,8 @@ export const createEvent = (groupId: string, userId: string, event: EVENT_DETAIL
         },
       )
     } else {
+      console.log('More than one event')
+
       reject({ error: 'Only one event can be created at a time' })
     }
   })
@@ -37,7 +58,7 @@ export const createEvent = (groupId: string, userId: string, event: EVENT_DETAIL
 
 export const getEvent = (groupId: string, eventId: string) => {
   return new Promise((resolve, reject) => {
-    const eventRef = firestore.collection('nama').doc(groupId).collection('events')
+    const eventRef = admin.firestore().collection('nama').doc(groupId).collection('events')
     const eventDocRef = eventRef.doc(eventId)
 
     eventDocRef.get().then(
@@ -45,7 +66,7 @@ export const getEvent = (groupId: string, eventId: string) => {
         if (docRef.exists) {
           const data = docRef.data()
 
-          // console.log(data)
+          console.log(data)
 
           // @ts-expect-error
           for (let i = 0; i < data.attendeeList.length; i++) {
@@ -70,13 +91,15 @@ export const getEvent = (groupId: string, eventId: string) => {
 
 export const getEventWId = (groupId: string) => {
   return new Promise(async (resolve, reject) => {
-    const eventRef = firestore.collection('nama').doc(groupId).collection('events')
+    const eventRef = admin.firestore().collection('nama').doc(groupId).collection('events')
     const activeEventSnap = await eventRef.where('eventStatus', '==', 'active').limit(1).get()
 
     if (!activeEventSnap.empty) {
       activeEventSnap.forEach(async (activeE) => {
         const eventId = activeE.id
         const activeEvent = activeE.data()
+
+        console.log(activeEvent)
 
         for (let i = 0; i < activeEvent.attendeeList.length; i++) {
           const attendee = activeEvent.attendeeList[i]
@@ -92,7 +115,7 @@ export const getEventWId = (groupId: string) => {
 
 export const cancelEvent = (groupId: string, eventId: string) => {
   return new Promise((resolve, reject) => {
-    const eventRef = firestore.collection('nama').doc(groupId).collection('events').doc(eventId)
+    const eventRef = admin.firestore().collection('nama').doc(groupId).collection('events').doc(eventId)
 
     eventRef.update({ eventStatus: 'cancel' }).then(
       (docRef) => {
@@ -108,10 +131,11 @@ export const cancelEvent = (groupId: string, eventId: string) => {
 
 export const updateUserStatus = (groupId: string, eventId: string, userId: string, status: userStatus) => {
   return new Promise((resolve, reject) => {
-    const eventRef = firestore.collection('nama').doc(groupId).collection('events').doc(eventId)
+    const eventRef = admin.firestore().collection('nama').doc(groupId).collection('events').doc(eventId)
 
-    firestore
-      .runTransaction((transaction) => {
+    admin
+      .firestore()
+      .runTransaction(async (transaction) => {
         return transaction.get(eventRef).then((eventDoc) => {
           if (!eventDoc.exists) reject({ error: 'Event does not exist!' })
 
@@ -124,6 +148,17 @@ export const updateUserStatus = (groupId: string, eventId: string, userId: strin
               // @ts-expect-error
               const currentStatus = doc.attendeeList[i].status
 
+              const statusText =
+                status === userStatus.UNSEEN
+                  ? 'ยังไม่เห็นอะไรเลย'
+                  : status === userStatus.ACKNOWLEDGED
+                  ? 'รู้แล้ว'
+                  : status === userStatus.TRAVELING
+                  ? 'กำลังเดินทาง'
+                  : status === userStatus.ARRIVED
+                  ? 'ถึงแล้ว'
+                  : ''
+
               /*if (currentStatus === userStatus.ARRIVED && status !== userStatus.ARRIVED) {
                 break
               } else*/ if (
@@ -134,6 +169,12 @@ export const updateUserStatus = (groupId: string, eventId: string, userId: strin
               } else {
                 // @ts-expect-error
                 doc.attendeeList[i].status = status
+                // @ts-expect-error
+                doc.attendeeList[i].last_updated = admin.firestore.Timestamp.now()
+                lineClient.pushMessage(userId, [
+                  // @ts-expect-error
+                  { type: 'text', text: `อัปเดตสถานะของนัดหมาย ${doc.eventName} เป็น ${statusText} เรียบร้อยแล้ว` },
+                ])
                 break
               }
             }

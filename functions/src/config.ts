@@ -1,20 +1,13 @@
-import * as dotenv from 'dotenv'
-
-dotenv.config()
-
 import { Client } from '@line/bot-sdk'
 import * as admin from 'firebase-admin'
 import * as functions from 'firebase-functions'
+import serviceAccount from './serviceAccountKey.json'
 
 export const lineClient = new Client({
-  channelAccessToken: <string>process.env.channelAccessToken,
-  channelSecret: <string>process.env.channelSecret,
+  channelAccessToken: functions.config().line.accesstoken,
+  channelSecret: functions.config().line.secret,
 })
 
-// import serviceAccount from './serviceAccountKey.json'
+admin.initializeApp({ credential: admin.credential.cert(<admin.ServiceAccount>serviceAccount) })
 
-admin.initializeApp(functions.config().firebase)
-
-export const firestore = admin.firestore()
-
-export const firestoreX = admin.firestore
+export { admin }

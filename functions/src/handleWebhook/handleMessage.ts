@@ -1,16 +1,8 @@
-import {
-  FlexBox,
-  FlexImage,
-  FlexMessage,
-  FlexText,
-  MessageEvent,
-  QuickReply,
-  TextEventMessage,
-  TextMessage,
-} from '@line/bot-sdk'
-import { firestore, lineClient } from '../config'
+import { FlexBox, FlexImage, FlexMessage, MessageEvent, QuickReply, TextEventMessage, TextMessage } from '@line/bot-sdk'
+import { admin, lineClient } from '../config'
 import { messageType, textTrigger } from '../constant'
 import { eventSummaryFlex } from '../replyComponent/scheduleSummary'
+import { storageUrl, getLiffUrl } from '../utils/const'
 
 export const handleMessage = (event: MessageEvent) => {
   return new Promise(async (resolve, reject) => {
@@ -64,7 +56,7 @@ const handleMessageText = async (event: MessageEvent) => {
         if (event.source.type === 'group') {
           resolve(
             await lineClient.replyMessage(event.replyToken, [
-              <FlexMessage>await eventSummaryFlex(event.source.groupId, 'IfTSjJ6V4RrEP3lcm1Za', 4),
+              <FlexMessage>await eventSummaryFlex(event.source.groupId, 'IfTSjJ6V4RrEP3lcm1Za', '4'),
               // eventSummaryFlex(ev, notificationType.NOTI_1D),
               // eventSummaryFlex(ev, notificationType.NOTI_60M),
               // eventSummaryFlex(ev, notificationType.NOTI_EVENT_TIME),
@@ -104,6 +96,16 @@ const manaCallEvent = (event: MessageEvent) => {
               text: textTrigger.STATUS_CHECK,
             },
           },
+          {
+            type: 'action',
+            imageUrl:
+              'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficheck.png?alt=media',
+            action: {
+              type: 'message',
+              label: 'ยกเลิกนัดหมาย',
+              text: textTrigger.CANCEL_EVENT,
+            },
+          },
         ],
       }
 
@@ -124,89 +126,55 @@ const manaCreateEvent = (event: MessageEvent) => {
   return new Promise(async (resolve, reject) => {
     try {
       // @ts-expect-error
-      const eventRef = firestore.collection('nama').doc(event.source.groupId).collection('events')
+      const eventRef = admin.firestore().collection('nama').doc(event.source.groupId).collection('events')
       const activeEventSnap = await eventRef.where('eventStatus', '==', 'active').get()
 
       if (activeEventSnap.empty) {
         const bgImage: FlexImage = {
           type: 'image',
+          url: `${storageUrl}/LINEBOT%2Fflex%2FCreateEventFlexBG.jpg?alt=media`,
           size: 'full',
           aspectMode: 'cover',
+          aspectRatio: '1.21:1',
           gravity: 'center',
-          aspectRatio: '1:1',
-          url:
-            'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Fflex%2FFlex_CreateEvent.png?alt=media&p=1',
         }
 
         const buttonContainer: FlexBox = {
           type: 'box',
-          layout: 'horizontal',
+          layout: 'vertical',
           contents: [
             {
-              type: 'box',
-              layout: 'vertical',
-              contents: [
-                {
-                  type: 'button',
-                  action: {
-                    type: 'uri',
-                    label: 'เพิ่มนัดหมาย',
-                    uri: 'http://google.com/', // Todo: Edit Action to liff
-                  },
-                  color: '#F06129',
-                  style: 'primary',
-                },
-              ],
-              spacing: 'xs',
+              type: 'image',
+              url: `${storageUrl}/LINEBOT%2Fflex%2FCreateEventButton.png?alt=media`,
+              align: 'center',
+              aspectMode: 'cover',
+              size: 'full',
+              aspectRatio: '2056:479',
+              action: {
+                type: 'uri',
+                label: 'action',
+                uri: getLiffUrl.createEvent(),
+              },
             },
           ],
-          position: 'absolute',
           offsetBottom: '0px',
           offsetStart: '0px',
           offsetEnd: '0px',
           paddingAll: '20px',
-        }
-
-        const headerText: FlexText = {
-          type: 'text',
-          text: '#สร้างนัดหมาย',
-          offsetTop: '25px',
-          offsetStart: '25px',
-          offsetEnd: '0px',
           position: 'absolute',
-          weight: 'bold',
-          size: 'lg',
-          color: '#F06129',
-        }
-
-        const bubbleText: FlexBox = {
-          type: 'box',
-          layout: 'vertical',
-          contents: [
-            {
-              type: 'text',
-              text: 'กำหนดรายละเอียดในการนัดครั้งนี้',
-              wrap: true,
-              size: 'lg',
-            },
-          ],
-          position: 'absolute',
-          offsetTop: '85px',
-          offsetStart: '25px',
-          paddingAll: '20px',
-          offsetEnd: '70px',
         }
 
         const flexBox: FlexBox = {
           type: 'box',
           layout: 'vertical',
-          contents: [bgImage, buttonContainer, headerText, bubbleText],
+          contents: [bgImage, buttonContainer],
           paddingAll: '0px',
+          backgroundColor: '#ffffff',
         }
 
         const flexMessageTrig: FlexMessage = {
           type: 'flex',
-          altText: 'Hello World!!',
+          altText: 'นามะมาช่วยเพื่อน ๆ สร้างนัดหมายแล้ว',
           contents: {
             type: 'bubble',
             body: flexBox,
@@ -223,8 +191,7 @@ const manaCreateEvent = (event: MessageEvent) => {
               items: [
                 {
                   type: 'action',
-                  imageUrl:
-                    'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficheck.png?alt=media',
+                  imageUrl: `${storageUrl}/LINEBOT%2Ficon%2Ficheck.png?alt=media`,
                   action: {
                     type: 'message',
                     label: 'เช็กนัดหมาย',
@@ -247,89 +214,54 @@ const manaCheckStatus = (event: MessageEvent) => {
   return new Promise(async (resolve, reject) => {
     try {
       // @ts-expect-error
-      const eventRef = firestore.collection('nama').doc(event.source.groupId).collection('events')
+      const eventRef = admin.firestore().collection('nama').doc(event.source.groupId).collection('events')
       const activeEventSnap = await eventRef.where('eventStatus', '==', 'active').get()
 
       if (!activeEventSnap.empty) {
         const bgImage: FlexImage = {
           type: 'image',
+          url: `${storageUrl}/LINEBOT%2Fflex%2FCheckStatusFlexBG.jpg?alt=media`,
           size: 'full',
           aspectMode: 'cover',
+          aspectRatio: '1.21:1',
           gravity: 'center',
-          aspectRatio: '1:1',
-          url:
-            'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Fflex%2FFlex_CreateEvent.png?alt=media&p=1',
         }
 
         const buttonContainer: FlexBox = {
           type: 'box',
-          layout: 'horizontal',
+          layout: 'vertical',
           contents: [
             {
-              type: 'box',
-              layout: 'vertical',
-              contents: [
-                {
-                  type: 'button',
-                  action: {
-                    type: 'uri',
-                    label: 'เช็กสถานะ',
-                    uri: 'http://google.com/', // Todo: Edit Action to liff
-                  },
-                  color: '#F06129',
-                  style: 'primary',
-                },
-              ],
-              spacing: 'xs',
+              type: 'image',
+              url: `${storageUrl}/LINEBOT%2Fflex%2FCheckStatusButton-1.png?alt=media`,
+              align: 'center',
+              aspectMode: 'cover',
+              size: 'full',
+              aspectRatio: '2056:479',
+              action: {
+                type: 'uri',
+                label: 'action',
+                uri: getLiffUrl.checkStatus(),
+              },
             },
           ],
-          position: 'absolute',
           offsetBottom: '0px',
           offsetStart: '0px',
           offsetEnd: '0px',
           paddingAll: '20px',
-        }
-
-        const headerText: FlexText = {
-          type: 'text',
-          text: '#เช็กสถานะ',
-          offsetTop: '25px',
-          offsetStart: '25px',
-          offsetEnd: '0px',
           position: 'absolute',
-          weight: 'bold',
-          size: 'lg',
-          color: '#F06129',
-        }
-
-        const bubbleText: FlexBox = {
-          type: 'box',
-          layout: 'vertical',
-          contents: [
-            {
-              type: 'text',
-              text: 'เช็กสถานะการนัดหมาย',
-              wrap: true,
-              size: 'lg',
-            },
-          ],
-          position: 'absolute',
-          offsetTop: '85px',
-          offsetStart: '25px',
-          paddingAll: '20px',
-          offsetEnd: '70px',
         }
 
         const flexBox: FlexBox = {
           type: 'box',
           layout: 'vertical',
-          contents: [bgImage, buttonContainer, headerText, bubbleText],
+          contents: [bgImage, buttonContainer],
           paddingAll: '0px',
         }
 
         const flexMessageTrig: FlexMessage = {
           type: 'flex',
-          altText: 'Hello World!!',
+          altText: 'นี่ไงสถานะของเพื่อน ๆ ร่วมนัด',
           contents: {
             type: 'bubble',
             body: flexBox,
@@ -370,7 +302,7 @@ const manaCancelEvent = (event: MessageEvent) => {
   return new Promise(async (resolve, reject) => {
     try {
       // @ts-expect-error
-      const eventRef = firestore.collection('nama').doc(event.source.groupId).collection('events')
+      const eventRef = admin.firestore().collection('nama').doc(event.source.groupId).collection('events')
       const activeEventSnap = await eventRef.where('eventStatus', '==', 'active').limit(1).get()
 
       if (!activeEventSnap.empty) {
@@ -391,83 +323,49 @@ const manaCancelEvent = (event: MessageEvent) => {
 
           const bgImage: FlexImage = {
             type: 'image',
+            url: `${storageUrl}/LINEBOT%2Fflex%2FCancelEventFlexBG.jpg?alt=media`,
             size: 'full',
             aspectMode: 'cover',
+            aspectRatio: '1.21:1',
             gravity: 'center',
-            aspectRatio: '1:1',
-            url:
-              'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Fflex%2FFlex_CreateEvent.png?alt=media&p=1',
           }
 
           const buttonContainer: FlexBox = {
             type: 'box',
-            layout: 'horizontal',
+            layout: 'vertical',
             contents: [
               {
-                type: 'box',
-                layout: 'vertical',
-                contents: [
-                  {
-                    type: 'button',
-                    action: {
-                      type: 'postback',
-                      label: 'ยกเลิกนัดหมาย',
-                      data: `cancelEvent?eventId=${eventId}`,
-                    },
-                    color: '#F06129',
-                    style: 'primary',
-                  },
-                ],
-                spacing: 'xs',
+                type: 'image',
+                url: `${storageUrl}/LINEBOT%2Fflex%2FCancelEventButton.png?alt=media`,
+                align: 'center',
+                aspectMode: 'cover',
+                size: 'full',
+                aspectRatio: '2056:479',
+                action: {
+                  type: 'postback',
+                  label: 'ยกเลิกนัดหมาย',
+                  data: `cancelEvent?eventId=${eventId}`,
+                },
               },
             ],
-            position: 'absolute',
             offsetBottom: '0px',
             offsetStart: '0px',
             offsetEnd: '0px',
             paddingAll: '20px',
-          }
-
-          const headerText: FlexText = {
-            type: 'text',
-            text: '#ยกเลิกนัดหมาย',
-            offsetTop: '25px',
-            offsetStart: '25px',
-            offsetEnd: '0px',
             position: 'absolute',
-            weight: 'bold',
-            size: 'lg',
-            color: '#F06129',
-          }
-
-          const bubbleText: FlexBox = {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-              {
-                type: 'text',
-                text: 'กดปุ่มด้านล่างเพื่อทำการยกเลิกนัดหมาย',
-                wrap: true,
-                size: 'lg',
-              },
-            ],
-            position: 'absolute',
-            offsetTop: '85px',
-            offsetStart: '25px',
-            paddingAll: '20px',
-            offsetEnd: '70px',
           }
 
           const flexBox: FlexBox = {
             type: 'box',
             layout: 'vertical',
-            contents: [bgImage, buttonContainer, headerText, bubbleText],
+            contents: [bgImage, buttonContainer],
             paddingAll: '0px',
+            backgroundColor: '#ffffff',
           }
 
           const flexMessageTrig: FlexMessage = {
             type: 'flex',
-            altText: 'Hello World!!',
+            altText: 'ยกเลิกนัดหมายได้ที่นี่ คลิกเลย!!',
             contents: {
               type: 'bubble',
               body: flexBox,

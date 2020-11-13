@@ -7,13 +7,22 @@ import { format } from 'date-fns'
 import { th } from 'date-fns/locale'
 import { lineClient } from '../config'
 
-export const eventSummaryFlex = async (groupId: string, eventId: string, flag: notificationType) => {
+export const eventSummaryFlex = async (groupId: string, eventId: string, _flag: string) => {
+  console.log(`eventSummaryFlex ${groupId} ${eventId} ${_flag}`)
+
+  const flag: notificationType = parseInt(_flag, 10)
+
   const event = await getEvent(groupId, eventId)
+  console.log(event)
+
   const HeaderContent = HeaderEvent(<FIRESTORE_EVENT_DETAIL>event, flag)
+  console.log('h', HeaderContent)
 
   const BodyContent = await BodyEvent(groupId, <FIRESTORE_EVENT_DETAIL>event, flag)
+  console.log('b', BodyContent)
 
   const Footer = FooterEvent(groupId, eventId, <FIRESTORE_EVENT_DETAIL>event, flag)
+  console.log('f', Footer)
 
   const FlexContent: FlexContainer = {
     type: 'bubble',
@@ -29,7 +38,7 @@ export const eventSummaryFlex = async (groupId: string, eventId: string, flag: n
     contents: FlexContent,
   }
 
-  // console.log(FlexMessageContainer)
+  console.log(FlexMessageContainer)
 
   return FlexMessageContainer
 }
@@ -163,6 +172,8 @@ const FooterEvent = (
 }
 
 const HeaderEvent = (event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
+  console.log(event, flag)
+
   const headerContainer: FlexBox = {
     type: 'box',
     layout: 'horizontal',
@@ -225,6 +236,7 @@ const HeaderEvent = (event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
       },
     ]
     headerContainer.contents.push(...EventNameHeader)
+
     return headerContainer
   } else if (flag === notificationType.NOTI_EVENT_TIME || flag === notificationType.NOTI_EVERY_15M) {
     const shibaCorner: FlexBox = {
@@ -306,6 +318,11 @@ const HeaderEvent = (event: FIRESTORE_EVENT_DETAIL, flag: notificationType) => {
     headerContainer.contents.push(...LabelNameHeader)
     return headerContainer
   }
+
+  console.log('flag')
+  console.log(flag)
+  console.log('3')
+  console.log(headerContainer)
   return
 }
 

@@ -3,14 +3,15 @@ import { firestore } from 'firebase-admin'
 
 export declare type EVENT_DETAIL = {
   eventName: string
-  eventDateTime?: firestore.Timestamp
-  eventDate?: string
-  eventTime?: string
+  eventDateTime: firestore.Timestamp
+  eventDate: string
+  eventTime: string
   eventLocation: string
   eventStatus: 'active' | 'past' | 'cancel'
   needUpdate: boolean
   remindFreq: REMIND_FREQ
   attendeeList: ATTENDEE_STATUS[]
+  eventAttendee?: ATTENDEE_STATUS[]
 }
 
 export declare type ATTENDEE_STATUS = {
