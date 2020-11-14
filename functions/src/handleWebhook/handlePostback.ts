@@ -23,7 +23,19 @@ export const handlePostback = (event: PostbackEvent) => {
         splitData[0] === userStatus.ARRIVED
       ) {
         //@ts-expect-error
-        resolve(await updateUserStatus(event.source.groupId, splitData[4], event.source.userId, splitData[0]))
+        const getEvent = await getEventWId(event.source.groupId)
+
+        resolve(
+          await updateUserStatus(
+            //@ts-expect-error
+            event.source.groupId /*, splitData[4]*/,
+            //@ts-expect-error
+            getEvent.eventId,
+            //@ts-expect-error
+            event.source.userId,
+            splitData[0],
+          ),
+        )
       } else if (splitData[0] === 'cancelEvent') {
         console.log('CANCEL EVENT')
         try {

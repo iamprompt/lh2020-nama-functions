@@ -179,7 +179,7 @@ export const sendSummary = functions.region('asia-northeast1').https.onRequest(a
   } else {
     // Create an event
     if (req.method === 'POST') {
-      if (req.query.groupId === undefined || req.query.eventId === undefined || req.query.flag === undefined) {
+      if (req.query.groupId === undefined || req.query.flag === undefined) {
         res.status(400).send({
           status: 'error',
           error: '[POST] Please provide groupId, eventId, and flag like -> /event?groupId=xxxxxxxx&userId=xxxxxxxxx',
@@ -189,11 +189,13 @@ export const sendSummary = functions.region('asia-northeast1').https.onRequest(a
 
       // console.log(req.body)
 
-      const { groupId, eventId, flag } = req.query
+      const { groupId, flag } = req.query
+
+      const event = await getEventWId(<string>groupId)
 
       lineClient.pushMessage(<string>groupId, [
         // @ts-expect-error
-        <FlexMessage>await eventSummaryFlex(<string>groupId, <string>eventId, <number>flag),
+        <FlexMessage>await eventSummaryFlex(<string>groupId, <string>event.eventId, <number>flag),
       ])
 
       res.status(200).send({

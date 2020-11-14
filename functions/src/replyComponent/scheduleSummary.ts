@@ -66,17 +66,17 @@ const FooterEvent = (
           type: 'box',
           layout: 'vertical',
           contents: [
-            /*{
+            {
               type: 'button',
               action: {
                 type: 'postback',
                 label: 'โอเคเลย',
-                data: `acknowledge?groupId=${groupId}&eventId=${eventId}`,
+                data: `acknowledged?groupId=${groupId}&eventId=${eventId}`,
               },
               style: 'primary',
               color: '#F06129',
-            },*/
-            {
+            },
+            /*{
               type: 'button',
               action: {
                 type: 'uri',
@@ -85,7 +85,7 @@ const FooterEvent = (
               },
               style: 'primary',
               color: '#F06129',
-            },
+            },*/
             {
               type: 'button',
               action: {
@@ -135,7 +135,7 @@ const FooterEvent = (
       type: 'box',
       layout: 'horizontal',
       contents: [
-        {
+        /*{
           type: 'button',
           action: {
             type: 'uri',
@@ -151,6 +151,28 @@ const FooterEvent = (
             type: 'uri',
             label: 'ถึงแล้ว',
             uri: `https://liff.line.me/1655194495-D0POdALl?status=arrived`,
+          },
+          color: '#F06129',
+          style: 'primary',
+        },*/
+        {
+          type: 'button',
+          action: {
+            type: 'postback',
+            label: 'กำลังเดินทาง',
+            data: `traveling?groupId=${groupId}&eventId=${eventId}`,
+            text: 'กำลังไปน้าาาา',
+          },
+          style: 'primary',
+          color: '#F06129',
+        },
+        {
+          type: 'button',
+          action: {
+            type: 'postback',
+            label: 'ถึงแล้ว',
+            data: `arrived?groupId=${groupId}&eventId=${eventId}`,
+            text: 'ถึงแล้วน้าาา',
           },
           color: '#F06129',
           style: 'primary',
