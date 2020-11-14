@@ -129,34 +129,42 @@ export const event = functions.region('asia-northeast1').https.onRequest(async (
 })
 
 export const status = functions.region('asia-northeast1').https.onRequest(async (req, res) => {
-  // Create an event
-  if (req.method === 'POST') {
-    if (
-      req.query.groupId === undefined ||
-      req.query.eventId === undefined ||
-      req.query.userId === undefined ||
-      req.query.status === undefined
-    ) {
-      res.status(400).send({
-        status: 'error',
-        error: '[POST] Please provide groupId and userId like -> /event?groupId=xxxxxxxx&userId=xxxxxxxxx',
+  res.set('Access-Control-Allow-Origin', '*')
+
+  if (req.method === 'OPTIONS') {
+    // Send response to OPTIONS requests
+    res.set('Access-Control-Allow-Methods', 'GET')
+    res.set('Access-Control-Allow-Headers', 'Content-Type')
+    res.set('Access-Control-Max-Age', '3600')
+    res.status(204).send('')
+  } else {
+    // Create an event
+    if (req.method === 'POST') {
+      if (req.query.groupId === undefined || req.query.userId === undefined || req.query.status === undefined) {
+        res.status(400).send({
+          status: 'error',
+          error: '[POST] Please provide groupId and userId like -> /event?groupId=xxxxxxxx&userId=xxxxxxxxx',
+        })
+        return
+      }
+      // console.log(req.body)
+
+      const { groupId, userId, status } = req.query
+
+      const event = await getEventWId(<string>groupId)
+
+      res.status(200).send({
+        status: 'success',
+        data: {
+          //@ts-expect-error
+          update: await updateUserStatus(<string>groupId, <string>event.eventId, <string>userId, <userStatus>status),
+        },
       })
       return
     }
 
-    // console.log(req.body)
-
-    const { groupId, userId, eventId, status } = req.query
-    res.status(200).send({
-      status: 'success',
-      data: {
-        update: await updateUserStatus(<string>groupId, <string>eventId, <string>userId, <userStatus>status),
-      },
-    })
-    return
+    res.status(405).send({ status: 'error', error: 'Method Not Allowed' })
   }
-
-  res.status(405).send({ status: 'error', error: 'Method Not Allowed' })
 })
 
 export const sendSummary = functions.region('asia-northeast1').https.onRequest(async (req, res) => {

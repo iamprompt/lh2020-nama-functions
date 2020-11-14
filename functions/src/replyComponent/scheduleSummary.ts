@@ -3,8 +3,9 @@ import { FIRESTORE_EVENT_DETAIL } from '../@types'
 import { getEvent } from '../api/event'
 import { notificationType, userStatus } from '../constant'
 
-import { format } from 'date-fns'
+import { format, add } from 'date-fns'
 import { th } from 'date-fns/locale'
+
 import { lineClient } from '../config'
 
 export const eventSummaryFlex = async (groupId: string, eventId: string, _flag: string) => {
@@ -65,7 +66,7 @@ const FooterEvent = (
           type: 'box',
           layout: 'vertical',
           contents: [
-            {
+            /*{
               type: 'button',
               action: {
                 type: 'postback',
@@ -73,6 +74,26 @@ const FooterEvent = (
                 data: `acknowledge?groupId=${groupId}&eventId=${eventId}`,
               },
               style: 'primary',
+              color: '#F06129',
+            },*/
+            {
+              type: 'button',
+              action: {
+                type: 'uri',
+                label: 'โอเคเลย',
+                uri: `https://liff.line.me/1655194495-D0POdALl?status=acknowledged`,
+              },
+              style: 'primary',
+              color: '#F06129',
+            },
+            {
+              type: 'button',
+              action: {
+                type: 'uri',
+                label: 'เพิ่มไปยังปฏิทิน',
+                uri: `https://nama-294515.web.app/appointment/addtoCalendar/?groupId=${groupId}`,
+              },
+              height: 'sm',
               color: '#F06129',
             },
           ],
@@ -117,10 +138,9 @@ const FooterEvent = (
         {
           type: 'button',
           action: {
-            type: 'postback',
+            type: 'uri',
             label: 'กำลังเดินทาง',
-            data: `traveling?groupId=${groupId}&eventId=${eventId}`,
-            text: 'กำลังไปน้าาาา',
+            uri: `https://liff.line.me/1655194495-D0POdALl?status=traveling`,
           },
           style: 'primary',
           color: '#F06129',
@@ -128,10 +148,9 @@ const FooterEvent = (
         {
           type: 'button',
           action: {
-            type: 'postback',
+            type: 'uri',
             label: 'ถึงแล้ว',
-            data: `arrived?groupId=${groupId}&eventId=${eventId}`,
-            text: 'ถึงแล้วน้าาา',
+            uri: `https://liff.line.me/1655194495-D0POdALl?status=arrived`,
           },
           color: '#F06129',
           style: 'primary',
@@ -155,7 +174,7 @@ const FooterEvent = (
           action: {
             type: 'uri',
             label: 'เช็กสถานะเพื่อน',
-            uri: 'http://linecorp.com/',
+            uri: 'https://liff.line.me/1655194495-dmpj59zq',
           },
           height: 'sm',
           color: '#F06129',
@@ -351,7 +370,9 @@ const BodyEvent = (groupId: string, event: FIRESTORE_EVENT_DETAIL, flag: notific
         contents: [],
       }
 
-      const DateTime = event.eventDateTime?.toDate()
+      const DateTime = add(event.eventDateTime?.toDate(), { hours: 7 })
+      console.log(DateTime)
+
       const eventDate = format(<Date>DateTime, 'dd MMM yyyy', { locale: th })
       const eventTime = `${format(<Date>DateTime, 'HH:mm', { locale: th })} น.`
 

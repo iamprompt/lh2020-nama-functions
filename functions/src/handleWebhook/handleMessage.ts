@@ -1,7 +1,7 @@
 import { FlexBox, FlexImage, FlexMessage, MessageEvent, QuickReply, TextEventMessage, TextMessage } from '@line/bot-sdk'
 import { admin, lineClient } from '../config'
 import { messageType, textTrigger } from '../constant'
-import { eventSummaryFlex } from '../replyComponent/scheduleSummary'
+// import { eventSummaryFlex } from '../replyComponent/scheduleSummary'
 import { storageUrl, getLiffUrl } from '../utils/const'
 
 export const handleMessage = (event: MessageEvent) => {
@@ -54,15 +54,7 @@ const handleMessageText = async (event: MessageEvent) => {
         }
       } else {
         if (event.source.type === 'group') {
-          resolve(
-            await lineClient.replyMessage(event.replyToken, [
-              <FlexMessage>await eventSummaryFlex(event.source.groupId, 'IfTSjJ6V4RrEP3lcm1Za', '4'),
-              // eventSummaryFlex(ev, notificationType.NOTI_1D),
-              // eventSummaryFlex(ev, notificationType.NOTI_60M),
-              // eventSummaryFlex(ev, notificationType.NOTI_EVENT_TIME),
-              // eventSummaryFlex(ev, notificationType.NOTI_EVERY_15M),
-            ]),
-          )
+          resolve()
         }
       }
     } catch (error) {
@@ -78,8 +70,7 @@ const manaCallEvent = (event: MessageEvent) => {
         items: [
           {
             type: 'action',
-            imageUrl:
-              'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficalendar.png?alt=media',
+            imageUrl: `${storageUrl}/LINEBOT%2Ficon%2FaddEvent.png?alt=media`,
             action: {
               type: 'message',
               label: 'สร้างนัดหมาย',
@@ -88,8 +79,7 @@ const manaCallEvent = (event: MessageEvent) => {
           },
           {
             type: 'action',
-            imageUrl:
-              'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficheck.png?alt=media',
+            imageUrl: `${storageUrl}/LINEBOT%2Ficon%2FcheckEvent.png?alt=media`,
             action: {
               type: 'message',
               label: 'เช็กสถานะ',
@@ -98,8 +88,7 @@ const manaCallEvent = (event: MessageEvent) => {
           },
           {
             type: 'action',
-            imageUrl:
-              'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficheck.png?alt=media',
+            imageUrl: `${storageUrl}/LINEBOT%2Ficon%2FcancelEvent.png?alt=media`,
             action: {
               type: 'message',
               label: 'ยกเลิกนัดหมาย',
@@ -191,11 +180,20 @@ const manaCreateEvent = (event: MessageEvent) => {
               items: [
                 {
                   type: 'action',
-                  imageUrl: `${storageUrl}/LINEBOT%2Ficon%2Ficheck.png?alt=media`,
+                  imageUrl: `${storageUrl}/LINEBOT%2Ficon%2FcheckEvent.png?alt=media`,
                   action: {
                     type: 'message',
-                    label: 'เช็กนัดหมาย',
+                    label: 'เช็กสถานะ',
                     text: textTrigger.STATUS_CHECK,
+                  },
+                },
+                {
+                  type: 'action',
+                  imageUrl: `${storageUrl}/LINEBOT%2Ficon%2FcancelEvent.png?alt=media`,
+                  action: {
+                    type: 'message',
+                    label: 'ยกเลิกนัดหมาย',
+                    text: textTrigger.CANCEL_EVENT,
                   },
                 },
               ],
@@ -278,8 +276,7 @@ const manaCheckStatus = (event: MessageEvent) => {
               items: [
                 {
                   type: 'action',
-                  imageUrl:
-                    'https://firebasestorage.googleapis.com/v0/b/nama-294515.appspot.com/o/LINEBOT%2Ficon%2Ficalendar.png?alt=media',
+                  imageUrl: `${storageUrl}/LINEBOT%2Ficon%2FaddEvent.png?alt=media`,
                   action: {
                     type: 'message',
                     label: 'สร้างนัดหมาย',
